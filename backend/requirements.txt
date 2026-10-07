@@ -1,0 +1,26 @@
+# ===== Web Framework =====
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+
+# ===== AI / LLM =====
+langchain==0.3.7
+langchain-community==0.3.5
+langchain-groq==0.2.1
+langgraph==0.2.45
+
+# ===== RAG =====
+sentence-transformers==3.2.1
+qdrant-client==1.12.0
+pypdf==5.0.1
+langchain-text-splitters==0.3.2
+
+# ===== Database =====
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+
+# ===== Config =====
+python-dotenv==1.0.1
+pydantic-settings==2.6.0
+
+# ===== Utils =====
+python-multipart==0.0.12
