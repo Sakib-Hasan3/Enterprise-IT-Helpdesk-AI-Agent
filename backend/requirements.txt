@@ -24,3 +24,6 @@ pydantic-settings==2.6.0
 
 # ===== Utils =====
 python-multipart==0.0.12
+
+uvicorn[standard]==0.32.0
+python-multipart==0.0.12
