@@ -15,8 +15,8 @@ pypdf==5.0.1
 langchain-text-splitters==0.3.2
 
 # ===== Database =====
-sqlalchemy==2.0.36
-psycopg2-binary==2.9.10
+# sqlalchemy==2.0.36
+# psycopg2-binary==2.9.10
 
 # ===== Config =====
 python-dotenv==1.0.1

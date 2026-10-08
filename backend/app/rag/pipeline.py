@@ -51,7 +51,7 @@ def ask(question: str, top_k: int = 5) -> dict:
     
     llm = ChatGroq(
         api_key=settings.GROQ_API_KEY,
-        model="llama-3.1-8b-instant",
+        model="qwen/qwen3.8-27b",
         temperature=0.1,
     )
     
