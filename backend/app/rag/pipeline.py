@@ -63,8 +63,7 @@ def retrieve_and_rerank(question: str, initial_k: int = 20, final_k: int = 5):
 def ask(question: str) -> dict:
     """Question → Answer + Citations"""
     logger.info(f"Question: {question}")
-    
-    # 1. Retrieve + rerank
+
     top_chunks = retrieve_and_rerank(question)
     
     if not top_chunks:
@@ -72,20 +71,17 @@ def ask(question: str) -> dict:
             "answer": "I don't have that information in my knowledge base.",
             "citations": [],
         }
-    
-    # 2. Context বানাও
+
     context = build_context(top_chunks)
-    
-    # 3. LLM
+
     llm = ChatGroq(
         api_key=settings.GROQ_API_KEY,
-        model="llama-3.1-8b-instant",
+        model="qwen/qwen3.8-27b",
         temperature=0.1,
     )
     chain = PROMPT | llm
     response = chain.invoke({"context": context, "question": question})
-    
-    # 4. Citations
+
     citations = format_citations(top_chunks)
     
     return {
