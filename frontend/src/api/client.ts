@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { ChatRequest, ChatResponse } from '../types/chat';
+import type { ChatRequest, ChatResponse, DocumentListResponse, HealthInfo } from '../types/chat';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
@@ -15,7 +15,12 @@ export async function sendMessage(question: string): Promise<ChatResponse> {
   return data;
 }
 
-export async function checkHealth() {
-  const { data } = await api.get('/health');
+export async function fetchDocuments(): Promise<DocumentListResponse> {
+  const { data } = await api.get<DocumentListResponse>('/documents');
+  return data;
+}
+
+export async function checkHealth(): Promise<HealthInfo> {
+  const { data } = await api.get<HealthInfo>('/health');
   return data;
 }
