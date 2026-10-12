@@ -19,13 +19,14 @@ export function ChatWindow({ messages }: { messages: ChatMessage[] }) {
             How can I help you today?
           </h2>
           <p className="text-sm text-gray-500 mb-6">
-            Ask me anything about IT — VPN, password reset, email setup, software installation.
+            Ask about company policies and IT guides for sourced answers, or ask any general question to get instant AI assistance (like ChatGPT).
           </p>
           <div className="grid grid-cols-1 gap-2 text-left">
             {[
-              'How do I reset my password?',
-              'VPN is not connecting, what should I do?',
               'What is incident management?',
+              'How do I implement a service management system?',
+              'How do I troubleshoot a slow Wi-Fi network?',
+              'Explain the difference between TCP and UDP',
             ].map((q) => (
               <SuggestionChip key={q} text={q} />
             ))}

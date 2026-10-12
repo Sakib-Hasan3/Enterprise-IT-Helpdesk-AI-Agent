@@ -1,3 +1,4 @@
+import re
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from app.config import settings
@@ -11,22 +12,41 @@ from app.utils.logger import get_logger
 
 logger = get_logger("rag.pipeline")
 
-# ---------- Prompt ----------
-PROMPT = ChatPromptTemplate.from_template("""
-You are an IT Helpdesk Assistant for employees.
+# ---------- Prompts ----------
+RAG_PROMPT = ChatPromptTemplate.from_template("""
+You are an IT Helpdesk & AI Assistant (functioning like ChatGPT with access to internal company documentation).
 
-RULES:
-1. Answer ONLY using the provided context below.
-2. If the answer is not in the context, respond EXACTLY:
-   "I don't have that information in my knowledge base."
-3. Be concise and use bullet points for steps.
-4. Do NOT make up information.
-5. Do NOT include source citations in your answer — they will be added separately.
-
-Context:
+DOCUMENT CONTEXT:
 {context}
 
-Employee's Question: {question}
+EMPLOYEE QUESTION:
+{question}
+
+INSTRUCTIONS:
+1. Examine the DOCUMENT CONTEXT above to see if it contains information that directly answers or relates to the employee's question.
+2. IF THE CONTEXT CONTAINS THE RELEVANT ANSWER:
+   - Provide a clear, structured, and accurate answer based on the context.
+   - Use bullet points for steps or procedures where helpful.
+   - At the VERY END of your response, on a new line, output:
+     [SOURCE: DOCUMENT]
+3. IF THE CONTEXT DOES NOT CONTAIN THE ANSWER (e.g. question is unrelated, general tech question, coding question, or everyday inquiry):
+   - Answer the question helpfully, thoroughly, and accurately using your general knowledge (just like ChatGPT).
+   - If it is a technical or troubleshooting question, provide standard best practices and clear steps.
+   - At the VERY END of your response, on a new line, output:
+     [SOURCE: GENERAL]
+4. NEVER say "I don't have that information in my knowledge base" unless the user explicitly asks what is in the knowledge base. Always be helpful and answer the question.
+5. Do NOT include source names, citations, or file names inside the answer text itself — they are added separately.
+
+Answer:
+""")
+
+GENERAL_PROMPT = ChatPromptTemplate.from_template("""
+You are an intelligent, friendly, and helpful AI Assistant (like ChatGPT).
+The user is asking a question that is not present in the internal documentation.
+Answer the user's question clearly, helpfully, and comprehensively using your general knowledge.
+If it involves IT support, troubleshooting, or technical steps, provide practical, structured guidance.
+
+User's Question: {question}
 
 Answer:
 """)
@@ -43,11 +63,14 @@ def ingest_pdf(file_path: str):
 
 
 # ---------- Retrieve + Rerank ----------
+RERANK_THRESHOLD = 0.01  # Minimum relevance score to consider a chunk useful
+
 def retrieve_and_rerank(question: str, initial_k: int = 20, final_k: int = 5):
     """
     দুই ধাপের retrieval:
     1. Vector search দিয়ে 20টা candidate আনি (fast, but noisy)
     2. Reranker দিয়ে best 5টা বাছি (slow, but accurate)
+    3. Threshold check — irrelevant results বাদ দিই
     """
     q_vec = embed_query(question)
     candidates = search(q_vec, top_k=initial_k)
@@ -56,36 +79,86 @@ def retrieve_and_rerank(question: str, initial_k: int = 20, final_k: int = 5):
     if not candidates:
         return []
     
-    return rerank(question, candidates, top_k=final_k)
+    reranked = rerank(question, candidates, top_k=final_k)
+    
+    # If best chunk score is below threshold, none of the results are relevant
+    if reranked and reranked[0].get("rerank_score", 0) < RERANK_THRESHOLD:
+        logger.info(
+            f"Best rerank score {reranked[0].get('rerank_score', 0):.4f} "
+            f"below threshold {RERANK_THRESHOLD} — no relevant chunks found"
+        )
+        return []
+    
+    return reranked
+
+
+def invoke_prompt(prompt, params: dict):
+    """Invokes prompt with primary model (qwen3.8-27b) and falls back to openai/gpt-oss-120b if rate limited"""
+    try:
+        primary_llm = ChatGroq(
+            api_key=settings.GROQ_API_KEY,
+            model="qwen/qwen3.8-27b",
+            temperature=0.2,
+            max_tokens=800,
+        )
+        return (prompt | primary_llm).invoke(params)
+    except Exception as e:
+        logger.warning(f"Primary model qwen/qwen3.8-27b failed ({e}). Falling back to openai/gpt-oss-120b...")
+        fallback_llm = ChatGroq(
+            api_key=settings.GROQ_API_KEY,
+            model="openai/gpt-oss-120b",
+            temperature=0.2,
+            max_tokens=800,
+        )
+        return (prompt | fallback_llm).invoke(params)
 
 
 # ---------- Ask ----------
 def ask(question: str) -> dict:
-    """Question → Answer + Citations"""
+    """
+    Question → Answer + Citations
+    - If found in documents: answers based on docs and returns citations.
+    - If not in documents: answers using general LLM knowledge (ChatGPT mode) without citations.
+    """
     logger.info(f"Question: {question}")
 
     top_chunks = retrieve_and_rerank(question)
-    
+
     if not top_chunks:
+        logger.info("No relevant document chunks found. Answering with general LLM knowledge.")
+        response = invoke_prompt(GENERAL_PROMPT, {"question": question})
         return {
-            "answer": "I don't have that information in my knowledge base.",
+            "answer": response.content.strip(),
             "citations": [],
+            "chunks_used": 0,
+            "source_type": "general_knowledge",
         }
 
+    logger.info(f"Found {len(top_chunks)} candidate chunks. Querying LLM with context.")
     context = build_context(top_chunks)
+    response = invoke_prompt(RAG_PROMPT, {"context": context, "question": question})
+    raw_answer = response.content.strip()
 
-    llm = ChatGroq(
-        api_key=settings.GROQ_API_KEY,
-        model="qwen/qwen3.8-27b",
-        temperature=0.1,
-    )
-    chain = PROMPT | llm
-    response = chain.invoke({"context": context, "question": question})
+    # Determine if the LLM used the documents or fell back to general knowledge
+    if "[SOURCE: GENERAL]" in raw_answer:
+        logger.info("LLM determined context was not applicable. Used general knowledge.")
+        clean_answer = re.sub(r"\[SOURCE:\s*GENERAL\]", "", raw_answer, flags=re.IGNORECASE).strip()
+        citations = []
+        chunks_used = 0
+        source_type = "general_knowledge"
+    else:
+        logger.info("LLM answered using documentation context.")
+        clean_answer = re.sub(r"\[SOURCE:\s*DOCUMENT\]", "", raw_answer, flags=re.IGNORECASE).strip()
+        for chunk in top_chunks:
+            if "score" not in chunk:
+                chunk["score"] = chunk.get("rerank_score", 0)
+        citations = format_citations(top_chunks)
+        chunks_used = len(top_chunks)
+        source_type = "knowledge_base"
 
-    citations = format_citations(top_chunks)
-    
     return {
-        "answer": response.content.strip(),
+        "answer": clean_answer,
         "citations": citations,
-        "chunks_used": len(top_chunks),
+        "chunks_used": chunks_used,
+        "source_type": source_type,
     }

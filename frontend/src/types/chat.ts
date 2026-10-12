@@ -12,6 +12,7 @@ export interface ChatMessage {
   citations?: Citation[];
   timestamp: Date;
   isLoading?: boolean;
+  sourceType?: 'knowledge_base' | 'general_knowledge';
 }
 
 export interface ChatRequest {
@@ -22,4 +23,5 @@ export interface ChatResponse {
   answer: string;
   citations: Citation[];
   chunks_used: number;
+  source_type?: 'knowledge_base' | 'general_knowledge';
 }

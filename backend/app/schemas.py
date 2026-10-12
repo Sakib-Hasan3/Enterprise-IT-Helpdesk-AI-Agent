@@ -13,6 +13,7 @@ class ChatResponse(BaseModel):
     answer: str
     citations: list[Citation] = []
     chunks_used: int = 0
+    source_type: str = "knowledge_base"
 
 class HealthResponse(BaseModel):
     status: str          

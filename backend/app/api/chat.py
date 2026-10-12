@@ -35,4 +35,5 @@ def chat(req: ChatRequest):
         answer=result["answer"],
         citations=citations,
         chunks_used=result.get("chunks_used", 0),
+        source_type=result.get("source_type", "knowledge_base"),
     )

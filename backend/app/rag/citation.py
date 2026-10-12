@@ -16,11 +16,17 @@ def format_citations(chunks: list[dict]) -> list[dict]:
             continue
         seen.add(key)
         
+        # Use vector cosine similarity (0-1) as the displayed relevance score
+        # since rerank_score with normalize=True outputs near-zero values
+        vector_score = c.get("score", 0)
+        rerank_score = c.get("rerank_score", 0)
+        relevance = rerank_score if rerank_score >= 0.01 else vector_score
+
         citations.append({
             "file": c["source"],
             "page": c["page"],
             "snippet": c["text"][:150].replace("\n", " ").strip() + "...",
-            "relevance": round(c.get("rerank_score", c.get("score", 0)), 3),
+            "relevance": round(relevance, 3),
         })
     
     return citations

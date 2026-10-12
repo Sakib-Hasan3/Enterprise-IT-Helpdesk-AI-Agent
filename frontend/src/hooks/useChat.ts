@@ -49,6 +49,7 @@ export function useChat() {
                 ...m,
                 content: res.answer,
                 citations: res.citations,
+                sourceType: res.source_type,
                 isLoading: false,
               }
             : m
