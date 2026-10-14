@@ -4,7 +4,8 @@ from app.utils.logger import get_logger
 logger = get_logger("rag.reranker")
 
 _reranker = None
-RERANKER_MODEL = "BAAI/bge-reranker-v2-m3"
+# bge-reranker-base: ~3x faster than v2-m3 on CPU, still high quality
+RERANKER_MODEL = "BAAI/bge-reranker-base"
 
 def get_reranker():
     """Reranker model একবার load করে reuse করব (singleton)"""

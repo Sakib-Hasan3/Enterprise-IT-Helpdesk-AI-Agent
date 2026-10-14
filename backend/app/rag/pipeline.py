@@ -1,5 +1,6 @@
 import re
 from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from app.config import settings
 from app.rag.loader import load_pdf
@@ -65,7 +66,7 @@ def ingest_pdf(file_path: str):
 # ---------- Retrieve + Rerank ----------
 RERANK_THRESHOLD = 0.01  # Minimum relevance score to consider a chunk useful
 
-def retrieve_and_rerank(question: str, initial_k: int = 20, final_k: int = 5):
+def retrieve_and_rerank(question: str, initial_k: int = 8, final_k: int = 3):
     """
     দুই ধাপের retrieval:
     1. Vector search দিয়ে 20টা candidate আনি (fast, but noisy)
@@ -93,24 +94,52 @@ def retrieve_and_rerank(question: str, initial_k: int = 20, final_k: int = 5):
 
 
 def invoke_prompt(prompt, params: dict):
-    """Invokes prompt with primary model (qwen3.8-27b) and falls back to openai/gpt-oss-120b if rate limited"""
+    """
+    3-tier LLM fallback for maximum speed + reliability:
+      Tier 1 → Groq  : llama-3.1-8b-instant  (fastest, ~1-2s)
+      Tier 2 → Groq  : qwen/qwen3-8b          (fallback if rate limited)
+      Tier 3 → Gemini: gemini-2.0-flash        (final fallback, very fast)
+    """
+    # --- Tier 1: Groq llama-3.1-8b-instant (fastest Groq model) ---
     try:
         primary_llm = ChatGroq(
             api_key=settings.GROQ_API_KEY,
-            model="qwen/qwen3.8-27b",
+            model="llama-3.1-8b-instant",
             temperature=0.2,
             max_tokens=800,
         )
-        return (prompt | primary_llm).invoke(params)
+        result = (prompt | primary_llm).invoke(params)
+        logger.info("LLM: Groq llama-3.1-8b-instant ✅")
+        return result
     except Exception as e:
-        logger.warning(f"Primary model qwen/qwen3.8-27b failed ({e}). Falling back to openai/gpt-oss-120b...")
-        fallback_llm = ChatGroq(
+        logger.warning(f"Tier 1 (Groq llama-3.1-8b-instant) failed: {e}. Trying Tier 2...")
+
+    # --- Tier 2: Groq qwen3-8b (secondary Groq model) ---
+    try:
+        secondary_llm = ChatGroq(
             api_key=settings.GROQ_API_KEY,
-            model="openai/gpt-oss-120b",
+            model="qwen-qwq-32b",
             temperature=0.2,
             max_tokens=800,
         )
-        return (prompt | fallback_llm).invoke(params)
+        result = (prompt | secondary_llm).invoke(params)
+        logger.info("LLM: Groq qwen-qwq-32b ✅")
+        return result
+    except Exception as e:
+        logger.warning(f"Tier 2 (Groq qwen-qwq-32b) failed: {e}. Trying Tier 3 (Gemini)...")
+
+    # --- Tier 3: Google Gemini 2.0 Flash (final fallback) ---
+    if not settings.GOOGLE_API_KEY:
+        raise RuntimeError("All Groq models failed and GOOGLE_API_KEY is not set. Add it to .env.")
+    gemini_llm = ChatGoogleGenerativeAI(
+        google_api_key=settings.GOOGLE_API_KEY,
+        model="gemini-2.0-flash",
+        temperature=0.2,
+        max_output_tokens=800,
+    )
+    result = (prompt | gemini_llm).invoke(params)
+    logger.info("LLM: Gemini 2.0 Flash ✅")
+    return result
 
 
 # ---------- Ask ----------

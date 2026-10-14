@@ -3,7 +3,8 @@ from pathlib import Path
 
 class Settings(BaseSettings):
     GROQ_API_KEY: str
-    
+    GOOGLE_API_KEY: str = ""  # Optional — Gemini Flash fallback
+
     QDRANT_URL: str = "http://localhost:6333"
     QDRANT_COLLECTION: str = "it_helpdesk_docs"
     
