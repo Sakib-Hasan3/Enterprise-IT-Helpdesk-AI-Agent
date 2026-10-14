@@ -5,6 +5,11 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str
     GOOGLE_API_KEY: str = ""  # Optional — Gemini Flash fallback
 
+    # ── Auth ──────────────────────────────────────
+    JWT_SECRET: str = "change-me-in-production-super-secret-key"
+    ADMIN_USERNAME: str = "admin"
+    ADMIN_PASSWORD: str = "ithelpdeskAdmin123"
+
     QDRANT_URL: str = "http://localhost:6333"
     QDRANT_COLLECTION: str = "it_helpdesk_docs"
     

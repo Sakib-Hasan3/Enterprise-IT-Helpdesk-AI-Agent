@@ -142,7 +142,7 @@ def invoke_prompt(prompt, params: dict):
     return result
 
 
-# ---------- Ask ----------
+# ---------- Ask (non-streaming) ----------
 def ask(question: str) -> dict:
     """
     Question → Answer + Citations
@@ -191,3 +191,95 @@ def ask(question: str) -> dict:
         "chunks_used": chunks_used,
         "source_type": source_type,
     }
+
+
+# ---------- Streaming Prompts (no [SOURCE:] markers needed) ----------
+RAG_STREAM_PROMPT = ChatPromptTemplate.from_template("""
+You are an IT Helpdesk AI Assistant with access to internal company documentation.
+
+DOCUMENT CONTEXT:
+{context}
+
+EMPLOYEE QUESTION: {question}
+
+Answer clearly and helpfully based on the document context. Use bullet points for steps.
+Keep your answer concise and actionable.
+
+Answer:
+""")
+
+GENERAL_STREAM_PROMPT = ChatPromptTemplate.from_template("""
+You are a helpful IT Helpdesk AI Assistant (like ChatGPT).
+Answer the following question clearly, helpfully, and concisely.
+For technical questions, provide structured, practical guidance.
+
+Question: {question}
+
+Answer:
+""")
+
+
+# ---------- Ask Stream ----------
+def ask_stream(question: str):
+    """
+    Streaming version of ask().
+    Yields JSON-serializable dicts for Server-Sent Events:
+      {"type": "status",    "message": "..."}
+      {"type": "chunk",     "content": "..."}
+      {"type": "citations", "citations": [...], "source_type": "..."}
+      {"type": "done"}
+      {"type": "error",     "message": "..."}
+    """
+    import json
+
+    logger.info(f"[Stream] Question: {question}")
+
+    try:
+        # Phase 1: retrieval (this is the slow part — send status first)
+        yield json.dumps({"type": "status", "message": "🔍 Searching knowledge base..."})
+
+        top_chunks = retrieve_and_rerank(question)
+
+        if not top_chunks:
+            prompt  = GENERAL_STREAM_PROMPT
+            params  = {"question": question}
+            meta    = {"citations": [], "chunks_used": 0, "source_type": "general_knowledge"}
+            yield json.dumps({"type": "status", "message": "💬 Generating response..."})
+        else:
+            context = build_context(top_chunks)
+            prompt  = RAG_STREAM_PROMPT
+            params  = {"context": context, "question": question}
+            for chunk in top_chunks:
+                if "score" not in chunk:
+                    chunk["score"] = chunk.get("rerank_score", 0)
+            citations_data = [c for c in format_citations(top_chunks)]
+            meta = {
+                "citations": citations_data,
+                "chunks_used": len(top_chunks),
+                "source_type": "knowledge_base",
+            }
+            yield json.dumps({"type": "status", "message": "📄 Found relevant docs — generating answer..."})
+
+        # Phase 2: stream LLM response token by token
+        llm = ChatGroq(
+            api_key=settings.GROQ_API_KEY,
+            model="llama-3.1-8b-instant",
+            temperature=0.2,
+            max_tokens=800,
+            streaming=True,
+        )
+
+        chain = prompt | llm
+        for chunk in chain.stream(params):
+            token = chunk.content
+            if token:
+                yield json.dumps({"type": "chunk", "content": token})
+
+        # Phase 3: send metadata (citations etc.)
+        yield json.dumps({"type": "citations", **meta})
+        yield json.dumps({"type": "done"})
+        logger.info("[Stream] Complete ✅")
+
+    except Exception as e:
+        logger.exception("[Stream] Error")
+        yield json.dumps({"type": "error", "message": str(e)})
