@@ -96,49 +96,47 @@ def retrieve_and_rerank(question: str, initial_k: int = 8, final_k: int = 3):
 def invoke_prompt(prompt, params: dict):
     """
     3-tier LLM fallback for maximum speed + reliability:
-      Tier 1 → Groq  : llama-3.1-8b-instant  (fastest, ~1-2s)
-      Tier 2 → Groq  : qwen/qwen3-8b          (fallback if rate limited)
-      Tier 3 → Gemini: gemini-2.0-flash        (final fallback, very fast)
+      Tier 1 → Groq: openai/gpt-oss-20b    (fastest, lightweight)
+      Tier 2 → Groq: qwen/qwen3.8-27b      (high capability reasoning)
+      Tier 3 → Groq: openai/gpt-oss-120b   (powerful fallback)
     """
-    # --- Tier 1: Groq llama-3.1-8b-instant (fastest Groq model) ---
+    # --- Tier 1: Groq openai/gpt-oss-20b ---
     try:
         primary_llm = ChatGroq(
             api_key=settings.GROQ_API_KEY,
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-20b",
             temperature=0.2,
             max_tokens=800,
         )
         result = (prompt | primary_llm).invoke(params)
-        logger.info("LLM: Groq llama-3.1-8b-instant ✅")
+        logger.info("LLM: Groq openai/gpt-oss-20b ✅")
         return result
     except Exception as e:
-        logger.warning(f"Tier 1 (Groq llama-3.1-8b-instant) failed: {e}. Trying Tier 2...")
+        logger.warning(f"Tier 1 (openai/gpt-oss-20b) failed: {e}. Trying Tier 2...")
 
-    # --- Tier 2: Groq qwen3-8b (secondary Groq model) ---
+    # --- Tier 2: Groq qwen/qwen3.8-27b ---
     try:
         secondary_llm = ChatGroq(
             api_key=settings.GROQ_API_KEY,
-            model="qwen-qwq-32b",
+            model="qwen/qwen3.8-27b",
             temperature=0.2,
             max_tokens=800,
         )
         result = (prompt | secondary_llm).invoke(params)
-        logger.info("LLM: Groq qwen-qwq-32b ✅")
+        logger.info("LLM: Groq qwen/qwen3.8-27b ✅")
         return result
     except Exception as e:
-        logger.warning(f"Tier 2 (Groq qwen-qwq-32b) failed: {e}. Trying Tier 3 (Gemini)...")
+        logger.warning(f"Tier 2 (qwen/qwen3.8-27b) failed: {e}. Trying Tier 3...")
 
-    # --- Tier 3: Google Gemini 2.0 Flash (final fallback) ---
-    if not settings.GOOGLE_API_KEY:
-        raise RuntimeError("All Groq models failed and GOOGLE_API_KEY is not set. Add it to .env.")
-    gemini_llm = ChatGoogleGenerativeAI(
-        google_api_key=settings.GOOGLE_API_KEY,
-        model="gemini-2.0-flash",
+    # --- Tier 3: Groq openai/gpt-oss-120b ---
+    tertiary_llm = ChatGroq(
+        api_key=settings.GROQ_API_KEY,
+        model="openai/gpt-oss-120b",
         temperature=0.2,
-        max_output_tokens=800,
+        max_tokens=800,
     )
-    result = (prompt | gemini_llm).invoke(params)
-    logger.info("LLM: Gemini 2.0 Flash ✅")
+    result = (prompt | tertiary_llm).invoke(params)
+    logger.info("LLM: Groq openai/gpt-oss-120b ✅")
     return result
 
 
@@ -263,7 +261,7 @@ def ask_stream(question: str):
         # Phase 2: stream LLM response token by token
         llm = ChatGroq(
             api_key=settings.GROQ_API_KEY,
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-20b",
             temperature=0.2,
             max_tokens=800,
             streaming=True,

@@ -1,3 +1,4 @@
+import uuid
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
     Distance, VectorParams, PointStruct
@@ -40,9 +41,10 @@ def upsert_chunks(chunks: list[dict], embeddings: list[list[float]]):
     ensure_collection()
     
     points = []
-    for i, (chunk, emb) in enumerate(zip(chunks, embeddings)):
+    for chunk, emb in zip(chunks, embeddings):
+        point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{chunk['source']}_{chunk['page']}_{chunk['chunk_index']}"))
         points.append(PointStruct(
-            id=i,
+            id=point_id,
             vector=emb,
             payload={
                 "text": chunk["text"],

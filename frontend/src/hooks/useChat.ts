@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { streamMessage } from '../../api/client';
+import { streamMessage } from '../api/client';
 import type { ChatMessage, Citation } from '../types/chat';
 
 function generateId() {
