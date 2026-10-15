@@ -16,9 +16,11 @@ interface SidebarProps {
   onClose: () => void;
   onNewChat: () => void;
   onSelectPrompt: (prompt: string) => void;
+  username?: string | null;
+  onLogout?: () => void;
 }
 
-export function Sidebar({ isOpen, onClose, onNewChat, onSelectPrompt }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, onNewChat, onSelectPrompt, username, onLogout }: SidebarProps) {
   const [documents, setDocuments] = useState<DocumentInfo[]>([]);
   const [health, setHealth] = useState<HealthInfo | null>(null);
   const [loadingDocs, setLoadingDocs] = useState(false);
@@ -175,7 +177,7 @@ export function Sidebar({ isOpen, onClose, onNewChat, onSelectPrompt }: SidebarP
         </div>
 
         {/* System Status Footer */}
-        <div className="p-3 border-t border-slate-800 bg-slate-950/60">
+        <div className="p-3 border-t border-slate-800 bg-slate-950/60 space-y-2">
           <div className="bg-slate-900 rounded-xl p-3 border border-slate-800/80 space-y-2">
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-slate-400 flex items-center gap-1.5">
@@ -192,6 +194,27 @@ export function Sidebar({ isOpen, onClose, onNewChat, onSelectPrompt }: SidebarP
               <span className="text-brand-300 font-medium">Hybrid RAG + AI</span>
             </div>
           </div>
+
+          {/* User info + Logout */}
+          {username && (
+            <div className="flex items-center justify-between bg-slate-900 rounded-xl px-3 py-2.5 border border-slate-800">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white text-[10px] font-bold">
+                  {username[0].toUpperCase()}
+                </div>
+                <span className="text-[11px] text-slate-300 font-medium">{username}</span>
+              </div>
+              <button
+                onClick={onLogout}
+                title="Sign out"
+                className="text-slate-500 hover:text-red-400 transition p-1 rounded cursor-pointer"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
       </aside>
     </>

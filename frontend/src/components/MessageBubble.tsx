@@ -67,8 +67,21 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             : 'bg-white text-slate-800 border border-slate-200/90 px-5 py-4 rounded-tl-xs hover:border-slate-300'
         }`}
       >
+        {/* Loading / Streaming state */}
         {message.isLoading ? (
-          <TypingIndicator />
+          message.statusMessage && !message.content ? (
+            // Status message before first token
+            <div className="flex items-center gap-2 text-slate-400 text-sm py-1">
+              <span className="flex gap-0.5">
+                <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce" />
+              </span>
+              <span className="text-xs text-slate-400 italic">{message.statusMessage}</span>
+            </div>
+          ) : (
+            <TypingIndicator />
+          )
         ) : (
           <>
             {/* Assistant Header: Badges & Copy button */}

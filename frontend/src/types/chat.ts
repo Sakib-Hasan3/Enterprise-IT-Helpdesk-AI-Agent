@@ -13,6 +13,7 @@ export interface ChatMessage {
   timestamp: Date;
   isLoading?: boolean;
   sourceType?: 'knowledge_base' | 'general_knowledge';
+  statusMessage?: string; // shown while streaming/retrieving
 }
 
 export interface ChatRequest {
@@ -42,4 +43,16 @@ export interface HealthInfo {
   qdrant: string;
   llm: string;
   version: string;
+}
+
+// Auth
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+  username: string;
 }
