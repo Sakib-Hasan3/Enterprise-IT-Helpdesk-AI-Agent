@@ -35,3 +35,242 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* ─── Prose-Chat: Markdown Rendering Styles (ChatGPT / Claude quality) ────── */
+.prose-chat {
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+/* ── Paragraphs ── */
+.prose-chat p {
+  margin-bottom: 0.75rem;
+}
+.prose-chat p:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Headings ── */
+.prose-chat h1 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-top: 1.25rem;
+  margin-bottom: 0.625rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+.prose-chat h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-top: 1.125rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+.prose-chat h3 {
+  font-size: 1.0rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-top: 1rem;
+  margin-bottom: 0.375rem;
+}
+.prose-chat h4 {
+  font-size: 0.925rem;
+  font-weight: 600;
+  color: #334155;
+  margin-top: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+.prose-chat h1:first-child,
+.prose-chat h2:first-child,
+.prose-chat h3:first-child,
+.prose-chat h4:first-child {
+  margin-top: 0;
+}
+
+/* ── Bold & Italic ── */
+.prose-chat strong {
+  font-weight: 650;
+  color: #0f172a;
+}
+.prose-chat em {
+  font-style: italic;
+  color: #475569;
+}
+
+/* ── Unordered Lists ── */
+.prose-chat ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-top: 0.375rem;
+  margin-bottom: 0.75rem;
+}
+.prose-chat ul ul {
+  list-style-type: circle;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+.prose-chat ul ul ul {
+  list-style-type: square;
+}
+.prose-chat ul li {
+  margin-bottom: 0.25rem;
+  padding-left: 0.25rem;
+}
+
+/* ── Ordered Lists ── */
+.prose-chat ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-top: 0.375rem;
+  margin-bottom: 0.75rem;
+}
+.prose-chat ol ol {
+  list-style-type: lower-alpha;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+.prose-chat ol li {
+  margin-bottom: 0.3rem;
+  padding-left: 0.25rem;
+}
+
+/* ── List item paragraph fix (react-markdown wraps li content in <p>) ── */
+.prose-chat li > p {
+  margin-bottom: 0.125rem;
+}
+
+/* ── Tables (GFM) ── */
+.prose-chat table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.625rem;
+  margin-bottom: 0.875rem;
+  font-size: 0.825rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+.prose-chat thead {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+}
+.prose-chat thead th {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-weight: 650;
+  color: #1e293b;
+  font-size: 0.8rem;
+  text-transform: none;
+  letter-spacing: 0.01em;
+  border-bottom: 2px solid #cbd5e1;
+  white-space: nowrap;
+}
+.prose-chat tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.15s ease;
+}
+.prose-chat tbody tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+.prose-chat tbody tr:hover {
+  background-color: #f1f5f9;
+}
+.prose-chat tbody td {
+  padding: 0.45rem 0.75rem;
+  color: #334155;
+  vertical-align: top;
+}
+.prose-chat tbody tr:last-child {
+  border-bottom: none;
+}
+
+/* ── Inline Code ── */
+.prose-chat code {
+  background-color: #f1f5f9;
+  color: #c026d3;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.3rem;
+  font-size: 0.8rem;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+}
+
+/* ── Code Blocks ── */
+.prose-chat pre {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  padding: 1rem 1.125rem;
+  border-radius: 0.75rem;
+  overflow-x: auto;
+  margin-top: 0.5rem;
+  margin-bottom: 0.875rem;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  border: 1px solid #334155;
+}
+.prose-chat pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  border: none;
+  font-weight: 400;
+}
+
+/* ── Blockquotes ── */
+.prose-chat blockquote {
+  border-left: 3px solid #818cf8;
+  background-color: #f8fafc;
+  padding: 0.625rem 1rem;
+  margin: 0.5rem 0 0.75rem 0;
+  border-radius: 0 0.5rem 0.5rem 0;
+  color: #475569;
+  font-style: italic;
+}
+.prose-chat blockquote p {
+  margin-bottom: 0.25rem;
+}
+.prose-chat blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Horizontal Rules ── */
+.prose-chat hr {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 1rem 0;
+}
+
+/* ── Links ── */
+.prose-chat a {
+  color: #4f46e5;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+.prose-chat a:hover {
+  color: #4338ca;
+}
+
+/* ── Task Lists (GFM checkboxes) ── */
+.prose-chat ul:has(> li > input[type="checkbox"]) {
+  list-style: none;
+  padding-left: 0.25rem;
+}
+.prose-chat input[type="checkbox"] {
+  margin-right: 0.5rem;
+  accent-color: #4f46e5;
+  transform: scale(1.1);
+  vertical-align: middle;
+}
+
+/* ── Strikethrough (GFM) ── */
+.prose-chat del {
+  color: #94a3b8;
+  text-decoration: line-through;
+}
