@@ -116,14 +116,13 @@ export function useChat() {
           }
         }
       } catch (e: any) {
-        const errMsg = e?.message || 'Sorry, I could not reach the server. Please try again.';
-        setError(errMsg);
+        setError(e?.message || 'Something went wrong');
         setMessages((prev) =>
           prev.map((m) =>
             m.id === botMsgId
               ? {
                   ...m,
-                  content:       `❌ ${errMsg}`,
+                  content:       '❌ Sorry, I could not reach the server. Please try again.',
                   isLoading:     false,
                   statusMessage: undefined,
                 }
