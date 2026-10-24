@@ -1,4 +1,5 @@
-<![CDATA[<div align="center">
+
+<div align="center">
 
 # 🤖 Enterprise IT Helpdesk AI Agent
 
@@ -99,12 +100,14 @@ An intelligent, enterprise-grade AI assistant that answers IT support questions 
 The system uses a sophisticated **two-stage retrieval** process:
 
 ### 1. Document Ingestion (One-Time)
+
 ```
 PDF Upload → Page Extraction (pypdf) → Chunking (500 chars, 50 overlap)
     → BGE-M3 Embedding (1024-dim vectors) → Store in Qdrant
 ```
 
 ### 2. Query Processing (Per Question)
+
 ```
 User Question
     │
@@ -124,6 +127,7 @@ User Question
 ```
 
 ### 3. Smart Source Detection
+
 The LLM itself determines whether the retrieved documents actually answer the question. Even if chunks are retrieved, if the LLM decides the context is irrelevant, it appends `[SOURCE: GENERAL]` and the system strips citations — ensuring the user never sees misleading references.
 
 ---
@@ -131,6 +135,7 @@ The LLM itself determines whether the retrieved documents actually answer the qu
 ## 🛠️ Tech Stack
 
 ### Backend
+
 | Technology | Purpose |
 |------------|---------|
 | **FastAPI** | High-performance async REST API framework |
@@ -144,6 +149,7 @@ The LLM itself determines whether the retrieved documents actually answer the qu
 | **Pydantic** | Request/response validation and settings management |
 
 ### Frontend
+
 | Technology | Purpose |
 |------------|---------|
 | **React 19** | Modern UI with hooks and functional components |
@@ -154,6 +160,7 @@ The LLM itself determines whether the retrieved documents actually answer the qu
 | **react-markdown** | Render markdown-formatted AI responses |
 
 ### Infrastructure
+
 | Technology | Purpose |
 |------------|---------|
 | **Docker** | Containerized deployment |
@@ -202,26 +209,26 @@ Enterprise-IT-Helpdesk-AI-Agent/
 │   ├── src/
 │   │   ├── App.tsx                   # Main app with auth routing
 │   │   ├── api/
-│   │   │   └── client.ts            # Axios + fetch SSE client with JWT
+│   │   │   └── client.ts             # Axios + fetch SSE client with JWT
 │   │   ├── components/
 │   │   │   ├── LoginPage.tsx         # Authentication UI
 │   │   │   ├── ChatWindow.tsx        # Message list with auto-scroll
 │   │   │   ├── ChatInput.tsx         # Message input with send button
 │   │   │   ├── MessageBubble.tsx     # User/AI message rendering (markdown)
 │   │   │   ├── CitationList.tsx      # Expandable source citations
-│   │   │   ├── Header.tsx            # Top bar with controls
-│   │   │   ├── Sidebar.tsx           # Quick prompts & navigation
-│   │   │   ├── TypingIndicator.tsx   # Loading animation
-│   │   │   └── Icons.tsx             # SVG icon components
+│   │   │   ├── Header.tsx             # Top bar with controls
+│   │   │   ├── Sidebar.tsx            # Quick prompts & navigation
+│   │   │   ├── TypingIndicator.tsx    # Loading animation
+│   │   │   └── Icons.tsx              # SVG icon components
 │   │   ├── hooks/
-│   │   │   ├── useAuth.ts           # Auth state management
-│   │   │   └── useChat.ts           # Chat state, streaming, persistence
+│   │   │   ├── useAuth.ts            # Auth state management
+│   │   │   └── useChat.ts            # Chat state, streaming, persistence
 │   │   └── types/
-│   │       └── chat.ts              # TypeScript interfaces
+│   │       └── chat.ts               # TypeScript interfaces
 │   │
 │   ├── Dockerfile                    # Node.js Alpine container
 │   ├── package.json                  # NPM dependencies
-│   └── tailwind.config.js           # Tailwind CSS configuration
+│   └── tailwind.config.js            # Tailwind CSS configuration
 │
 ├── documentation/                    # Detailed project documentation
 │   ├── 01_project_overview.md
@@ -265,6 +272,7 @@ docker compose up -d
 ```
 
 This starts 3 containers:
+
 | Container | Port | Description |
 |-----------|------|-------------|
 | `it-helpdesk-qdrant` | 6333 | Qdrant Vector Database |
@@ -274,11 +282,13 @@ This starts 3 containers:
 ### Option 2: Run Locally (Development)
 
 #### Step 1 — Start Qdrant
+
 ```bash
 docker run -d -p 6333:6333 -v $(pwd)/qdrant_storage:/qdrant/storage:z qdrant/qdrant
 ```
 
 #### Step 2 — Start the Backend
+
 ```bash
 cd backend
 
@@ -301,6 +311,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 > ⏳ First startup takes ~30 seconds to load BGE-M3 (embedding) and BGE-Reranker (cross-encoder) models.
 
 #### Step 3 — Start the Frontend
+
 ```bash
 cd frontend
 
@@ -312,6 +323,7 @@ npm run dev
 ```
 
 #### Step 4 — Open the App
+
 ```
 🌐 Frontend:     http://localhost:5173
 📖 API Docs:     http://localhost:8000/docs
@@ -319,6 +331,7 @@ npm run dev
 ```
 
 ### Default Login Credentials
+
 ```
 Username: admin
 Password: ithelpdeskAdmin123
@@ -331,24 +344,28 @@ Password: ithelpdeskAdmin123
 All endpoints are prefixed with `/api`. Protected endpoints require a `Bearer` token.
 
 ### Authentication
+
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | `POST` | `/api/auth/login` | ❌ | Login with username/password → JWT token |
 | `GET` | `/api/auth/me` | ✅ | Get current authenticated user info |
 
 ### Chat
+
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | `POST` | `/api/chat` | ✅ | Send question → full response (non-streaming) |
 | `POST` | `/api/chat/stream` | ✅ | Send question → SSE streaming response |
 
 ### Documents
+
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | `GET` | `/api/documents` | ❌ | List all ingested PDF documents |
 | `POST` | `/api/ingest` | ❌ | Upload and ingest a new PDF (max 20MB) |
 
 ### System
+
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | `GET` | `/api/health` | ❌ | System health check (Qdrant, LLM status) |
@@ -399,12 +416,14 @@ The system ships with **7 pre-indexed IT support PDF guides** covering common en
 ### Adding Your Own Documents
 
 Upload PDFs through the API:
+
 ```bash
 curl -X POST http://localhost:8000/api/ingest \
   -F "file=@/path/to/your/document.pdf"
 ```
 
 The system will automatically:
+
 1. Extract text from all pages
 2. Split into 500-character chunks (50-char overlap)
 3. Generate BGE-M3 embeddings (1024-dim)
@@ -488,7 +507,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
+3. Commit your changes (`git commit -m 'Add amazing-feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
@@ -507,4 +526,3 @@ This project is open source and available under the [MIT License](LICENSE).
 ⭐ **Star this repo** if you found it useful!
 
 </div>
-]]>
