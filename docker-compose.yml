@@ -24,13 +24,17 @@ services:
     container_name: it-helpdesk-backend
     ports:
       - "8000:8000"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     env_file:
       - ./backend/.env
     environment:
       - QDRANT_URL=http://qdrant:6333   # override to use container name
+      - HF_HUB_OFFLINE=1
     volumes:
       - ./backend/data:/app/data         # persist uploaded PDFs
-      - hf_cache:/root/.cache/huggingface  # persist embedding model cache
+      - ${HOME}/.cache/huggingface:/root/.cache/huggingface  # persist embedding model cache
     depends_on:
       qdrant:
         condition: service_healthy
@@ -60,4 +64,3 @@ services:
 # ── Volumes ──────────────────────────────────────────────────────────────────
 volumes:
   qdrant_storage:
-  hf_cache:
